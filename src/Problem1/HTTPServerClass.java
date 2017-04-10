@@ -1,20 +1,17 @@
 package Problem1;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
 /**
- * Created by Markus on 16/02/16.
+ * Created by Markus Lykonhold on 08/04/17.
  */
 public class HTTPServerClass {
 
     public static void main(String[] args) {
 
-        int portNumber = 5000;         // creating an Int for the port, which is already defined.
+        int portNumber = 4000;         // creating an Int for the port, which is already defined.
 
         ServerSocket serverSocket = null;                       //Creating the server socket
 
@@ -23,15 +20,15 @@ public class HTTPServerClass {
             serverSocket = new ServerSocket(portNumber);
 
             System.out.println("connection started");
-
+git
         } catch (IOException e) {                                       //If not , an exception will be thrown
             System.out.println("Could not connect to port");}
 
 
         try {                                                           // then we try to accept the connection
             while (true) {
-                 Socket s =   serverSocket.accept();
-                (new HTTPClientClass(s)).start();
+                 Socket s = serverSocket.accept();
+                (new HTTPClientClass(s)).run();
             }
         } catch (IOException e) {                                       //If not, an exception will be thrown
             System.out.println("accept failed");

@@ -1,144 +1,52 @@
 package Problem1;
 
-import java.io.*;
-import java.net.InetAddress;
-import java.net.ServerSocket;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.IOException;
 import java.net.Socket;
-import java.net.URLDecoder;
-import java.util.StringTokenizer;
 
 /**
- * Created by Markus on 18/02/16.
+    Created by Markus Lykonhold on 08/04/17.
  */
-public class HTTPClientClass extends Thread {
+public class HTTPClientClass implements Runnable {
 
-    private String pathInput;
-    private RespondCode respondCode;
+    //the clientsocket is created here
+    protected Socket clientSocket = null;
 
-    static final String HTML_START =
-            "<html>" +
-                    "<title>HTTP Server in java</title>" +
-                    "<body>";
-
-    static final String HTML_END =
-            "</body>" +
-                    "</html>";
-
-    Socket connectedClient = null;
-    BufferedReader inFromClient = null;
-    DataOutputStream outToClient = null;
-
-
-    public HTTPClientClass(Socket client) {
-        connectedClient = client;
+    //here we bind the socket with the class
+    public HTTPClientClass(Socket clientSocket) {
+        this.clientSocket = clientSocket;
     }
 
+    //the method for opening the stream, taking the request and responsing
     public void run() {
-
         try {
+            //input and output streams for the socket
+            InputStream input = clientSocket.getInputStream();
+            OutputStream output = clientSocket.getOutputStream();
 
-            System.out.println("The Client " + connectedClient.getInetAddress() + ":" + connectedClient.getPort() + " is connected");
 
-            inFromClient = new BufferedReader(new InputStreamReader(connectedClient.getInputStream()));
-            outToClient = new DataOutputStream(connectedClient.getOutputStream());
+           /*a time variable in order to log the time it takes to
+           proccess the request
+            */
+            long time = System.currentTimeMillis();
 
-            String requestString = inFromClient.readLine();
-            String headerLine = requestString;
 
-            StringTokenizer tokenizer = new StringTokenizer(headerLine);
-            String httpMethod = tokenizer.nextToken();
-            String httpQueryString = tokenizer.nextToken();
+            //here we write to the localhost, we send in the http resposne
+            //and the html page details as well as request proccess time.
+            output.write(("HTTP/1.1 200 OK\n\n<html><body>" +
+                    "Singlethreaded Server: " + time +"</body></html>").getBytes());
 
-            StringBuffer responseBuffer = new StringBuffer();
-            responseBuffer.append("<b> This is the HTTP Server Home Page.... </b><BR>");
-            responseBuffer.append("The HTTP Client request is ....<BR>");
+            //here we close the streams and print out the time in the console
+            input.close();
+            output.close();
 
-            System.out.println("The HTTP request string is ....");
-            while (inFromClient.ready()) {
-                // Read the HTTP complete HTTP Query
-                responseBuffer.append(requestString + "<BR>");
-                System.out.println(requestString);
-                requestString = inFromClient.readLine();
-            }
-
-            if (httpMethod.equals("GET")) {
-                getRequestMethod();
-            }
-        } catch (Exception e) {
+            int seconds = (int) (time / 1000) % 60 ;
+            System.out.println("Request proccess time: " + seconds);
+        } catch (IOException e) {
+            //report exception somewhere.
             e.printStackTrace();
         }
     }
-
-    private void getRequestMethod()throws Exception{
-        File file = new File("");
-
-        if(pathInput.endsWith("/")){
-
-        }
-    }
-
-    public void sendResponse(int statusCode, String responseString, boolean isFile) throws Exception {
-
-        String statusLine = null;
-        String serverdetails = "Server: Java HTTPServer";
-        String contentLengthLine = null;
-        String fileName = null;
-        String contentTypeLine = "Content-Type: text/html" + "\r\n";
-        FileInputStream fin = null;
-
-        if (statusCode == 200)
-            statusLine = "HTTP/1.1 200 OK" + "\r\n";
-        else
-            statusLine = "HTTP/1.1 404 Not Found" + "\r\n";
-
-        if (isFile) {
-            fileName = responseString;
-            fin = new FileInputStream(fileName);
-            contentLengthLine = "Content-Length: " + Integer.toString(fin.available()) + "\r\n";
-            if (!fileName.endsWith(".htm") && !fileName.endsWith(".html"))
-                contentTypeLine = "Content-Type: \r\n";
-        } else {
-            responseString = HTTPClientClass.HTML_START + responseString + HTTPClientClass.HTML_END;
-            contentLengthLine = "Content-Length: " + responseString.length() + "\r\n";
-        }
-
-        outToClient.writeBytes(statusLine);
-        outToClient.writeBytes(serverdetails);
-        outToClient.writeBytes(contentTypeLine);
-        outToClient.writeBytes(contentLengthLine);
-        outToClient.writeBytes("Connection: close\r\n");
-        outToClient.writeBytes("\r\n");
-
-        if (isFile) sendFile(fin, outToClient);
-        else outToClient.writeBytes(responseString);
-
-        outToClient.close();
-    }
-
-    public void sendFile(FileInputStream fin, DataOutputStream out) throws Exception {
-        try {
-            byte[] buffer = new byte[1024];
-            int bytesRead;
-
-            while ((bytesRead = fin.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
-            }
-            fin.close();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public static void main(String args[]) throws Exception {
-
-        ServerSocket Server = new ServerSocket(5000, 10, InetAddress.getByName("127.0.0.1"));
-        System.out.println("TCPServer Waiting for client on port 5000");
-
-        while (true) {
-            Socket connected = Server.accept();
-            (new HTTPClientClass(connected)).start();
-        }
-    }
-
-
 }
+
